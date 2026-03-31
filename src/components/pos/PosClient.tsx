@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Printer, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { checkoutAction } from "@/app/actions/checkout";
@@ -10,6 +10,38 @@ import type { Product } from "@/types/database";
 
 type LineSource = "regular" | "return";
 type CartLine = { product: Product; qty: number; source: LineSource };
+type DiscountPreset = "0" | "5" | "10" | "custom";
+type ReceiptLine = {
+  name: string;
+  qty: number;
+  source: LineSource;
+  unitPrice: number;
+  lineTotal: number;
+};
+type PrintedReceipt = {
+  receiptNumber: string;
+  createdAtIso: string;
+  lines: ReceiptLine[];
+  subtotal: number;
+  discountPercent: number;
+  discountAmount: number;
+  total: number;
+  cashReceived: number;
+  changeDue: number;
+};
+
+function roundMoney(v: number) {
+  return Math.round((v + Number.EPSILON) * 100) / 100;
+}
+
+function escapeHtml(text: string) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 export function PosClient({ products }: { products: Product[] }) {
   const router = useRouter();
@@ -28,6 +60,10 @@ export function PosClient({ products }: { products: Product[] }) {
   const [sellMode, setSellMode] = useState<LineSource>("regular");
   const [productPage, setProductPage] = useState(1);
   const [productPageSize, setProductPageSize] = useState(12);
+  const [discountPreset, setDiscountPreset] = useState<DiscountPreset>("0");
+  const [customDiscountInput, setCustomDiscountInput] = useState("");
+  const [cashInput, setCashInput] = useState("");
+  const [lastReceipt, setLastReceipt] = useState<PrintedReceipt | null>(null);
   const [pending, startTransition] = useTransition();
 
   const filtered = useMemo(() => {
@@ -108,6 +144,29 @@ export function PosClient({ products }: { products: Product[] }) {
   const lines = Array.from(cart.values());
   const totalItemsInCart = lines.reduce((sum, line) => sum + line.qty, 0);
   const subtotal = lines.reduce((a, l) => a + l.qty * Number(l.product.price), 0);
+  const customDiscount = Number(customDiscountInput);
+  const discountPercentRaw =
+    discountPreset === "custom" ? (Number.isFinite(customDiscount) ? customDiscount : 0) : Number(discountPreset);
+  const discountPercent = Math.max(0, Math.min(100, discountPercentRaw));
+  const discountFactor = 1 - discountPercent / 100;
+  const discountedPreviewLines = lines.map((line) => {
+    const discountedUnit = roundMoney(Number(line.product.price) * discountFactor);
+    const lineTotal = roundMoney(discountedUnit * line.qty);
+    return {
+      key: `${line.product.id}:${line.source}`,
+      name: line.product.name,
+      qty: line.qty,
+      source: line.source,
+      unitPrice: discountedUnit,
+      lineTotal,
+    };
+  });
+  const discountedSubtotal = roundMoney(discountedPreviewLines.reduce((sum, line) => sum + line.lineTotal, 0));
+  const discountAmount = roundMoney(subtotal - discountedSubtotal);
+  const cashReceivedRaw = Number(cashInput);
+  const cashReceived = Number.isFinite(cashReceivedRaw) ? Math.max(0, cashReceivedRaw) : 0;
+  const changeDue = roundMoney(cashReceived - discountedSubtotal);
+  const canCharge = lines.length > 0 && cashReceived >= discountedSubtotal;
   const totalProductPages = Math.max(1, Math.ceil(filtered.length / productPageSize));
   const safeProductPage = Math.min(productPage, totalProductPages);
   const paginatedProducts = useMemo(() => {
@@ -115,21 +174,159 @@ export function PosClient({ products }: { products: Product[] }) {
     return filtered.slice(start, start + productPageSize);
   }, [filtered, safeProductPage, productPageSize]);
 
+  function printReceipt(receipt: PrintedReceipt) {
+    const win = window.open("", "_blank", "width=420,height=760");
+    if (!win) {
+      setMsg("Pop-up blocked. Allow pop-ups to print receipt.");
+      return;
+    }
+    const timeText = new Date(receipt.createdAtIso).toLocaleString();
+    const rows = receipt.lines
+      .map(
+        (line) => `
+          <tr>
+            <td>
+              ${escapeHtml(line.name)}${line.source === "return" ? " (Return)" : ""}
+              <div style="color:#6b7280;font-size:11px;">${line.qty} × ${escapeHtml(formatMoney(line.unitPrice))}</div>
+            </td>
+            <td style="text-align:right;">${escapeHtml(formatMoney(line.unitPrice))}</td>
+            <td style="text-align:right;">${escapeHtml(formatMoney(line.lineTotal))}</td>
+          </tr>
+        `
+      )
+      .join("");
+    win.document.open();
+    win.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Receipt ${escapeHtml(receipt.receiptNumber)}</title>
+          <style>
+            @page { size: 80mm auto; margin: 6mm; }
+            body {
+              margin: 0;
+              color: #111;
+              background: #fff;
+              font-family: "Courier New", Courier, monospace;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .receipt {
+              width: 72mm;
+              margin: 0 auto;
+              padding: 2mm 0;
+              font-size: 12px;
+              line-height: 1.3;
+            }
+            .center { text-align: center; }
+            .store-name { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+            .store-sub { margin: 2px 0 0; font-size: 11px; color: #4b5563; }
+            .separator { border-top: 1px dashed #333; margin: 8px 0; }
+            .meta { font-size: 11px; }
+            .meta-row { display: flex; justify-content: space-between; gap: 8px; margin: 2px 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12px; }
+            th, td { padding: 5px 0; vertical-align: top; }
+            th { text-align: left; font-size: 11px; border-bottom: 1px dashed #333; }
+            .money { text-align: right; white-space: nowrap; }
+            .totals { margin-top: 8px; font-size: 12px; }
+            .totals div { display: flex; justify-content: space-between; margin: 3px 0; }
+            .grand {
+              font-size: 14px;
+              font-weight: 700;
+              border-top: 1px solid #111;
+              border-bottom: 1px solid #111;
+              padding: 6px 0;
+              margin: 6px 0;
+            }
+            .footer { margin-top: 10px; text-align: center; font-size: 11px; color: #4b5563; }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <div class="center">
+              <p class="store-name">PHOEBE DRUGSTORE</p>
+              <p class="store-sub">Official Sales Receipt</p>
+            </div>
+            <div class="separator"></div>
+            <div class="meta">
+              <div class="meta-row"><span>Receipt No:</span><span>${escapeHtml(receipt.receiptNumber)}</span></div>
+              <div class="meta-row"><span>Date/Time:</span><span>${escapeHtml(timeText)}</span></div>
+            </div>
+            <div class="separator"></div>
+            <table>
+              <thead>
+                <tr><th>Item</th><th class="money">Price</th><th class="money">Amount</th></tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+            <div class="separator"></div>
+            <div class="totals">
+              <div><span>Subtotal</span><span>${escapeHtml(formatMoney(receipt.subtotal))}</span></div>
+              <div><span>Discount (${receipt.discountPercent.toFixed(2)}%)</span><span>- ${escapeHtml(formatMoney(receipt.discountAmount))}</span></div>
+              <div class="grand"><span>Total</span><span>${escapeHtml(formatMoney(receipt.total))}</span></div>
+              <div><span>Cash Received</span><span>${escapeHtml(formatMoney(receipt.cashReceived))}</span></div>
+              <div><span>Change</span><span>${escapeHtml(formatMoney(receipt.changeDue))}</span></div>
+            </div>
+            <div class="separator"></div>
+            <div class="footer">
+              Thank you for your purchase.<br/>
+              Please keep this receipt for returns/exchange.
+            </div>
+          </div>
+          <script>window.onload = () => { window.print(); };</script>
+        </body>
+      </html>
+    `);
+    win.document.close();
+  }
+
   function checkout() {
     setMsg(null);
     if (lines.length === 0) return;
+    if (cashReceived < discountedSubtotal) {
+      setMsg("Insufficient cash received.");
+      return;
+    }
     startTransition(async () => {
+      const saleLines = lines.map((l) => ({
+        product_id: l.product.id,
+        quantity: l.qty,
+        price: roundMoney(Number(l.product.price) * discountFactor),
+        source: l.source,
+      }));
       const res = await checkoutAction(
-        lines.map((l) => ({
-          product_id: l.product.id,
-          quantity: l.qty,
-          price: Number(l.product.price),
-          source: l.source,
-        }))
+        saleLines
       );
       if (!res.ok) setMsg(res.message);
       else {
+        const receiptLines: ReceiptLine[] = lines.map((l, i) => {
+          const unitPrice = saleLines[i].price;
+          return {
+            name: l.product.name,
+            qty: l.qty,
+            source: l.source,
+            unitPrice,
+            lineTotal: roundMoney(unitPrice * l.qty),
+          };
+        });
+        const printedSubtotal = roundMoney(lines.reduce((a, l) => a + l.qty * Number(l.product.price), 0));
+        const printedTotal = roundMoney(receiptLines.reduce((a, l) => a + l.lineTotal, 0));
+        const printedDiscount = roundMoney(printedSubtotal - printedTotal);
+        const nextReceipt: PrintedReceipt = {
+          receiptNumber: res.receipt,
+          createdAtIso: res.createdAtIso,
+          lines: receiptLines,
+          subtotal: printedSubtotal,
+          discountPercent,
+          discountAmount: printedDiscount,
+          total: printedTotal,
+          cashReceived: roundMoney(cashReceived),
+          changeDue: roundMoney(cashReceived - printedTotal),
+        };
+        setLastReceipt(nextReceipt);
         setCart(new Map());
+        setCashInput("");
         setMsg(`Sale complete — receipt ${res.receipt}`);
         router.refresh();
       }
@@ -381,20 +578,130 @@ export function PosClient({ products }: { products: Product[] }) {
         </ul>
 
         <div className="mt-3.5 shrink-0 space-y-3 border-t border-[rgba(15,68,21,0.08)] pt-3.5">
+          <div className="space-y-2 rounded-[var(--radius-lg)] border border-[rgba(15,68,21,0.1)] bg-white p-2.5">
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
+              Discount
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {([
+                ["0", "None"],
+                ["5", "5%"],
+                ["10", "10%"],
+                ["custom", "Custom"],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setDiscountPreset(value)}
+                  className={`h-8 rounded-md px-2.5 text-xs font-semibold ${
+                    discountPreset === value
+                      ? "bg-[var(--color-primary-bright)] text-[var(--color-cream-deep)]"
+                      : "border border-[rgba(15,68,21,0.15)] bg-white text-[var(--foreground)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {discountPreset === "custom" ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  value={customDiscountInput}
+                  onChange={(e) => setCustomDiscountInput(e.target.value)}
+                  placeholder="0.00"
+                  className="input-field !h-8 !py-0 !text-xs"
+                />
+                <span className="text-xs text-[var(--foreground-muted)]">%</span>
+              </div>
+            ) : null}
+          </div>
           <div className="flex items-baseline justify-between">
             <span className="text-sm font-medium text-[var(--foreground-muted)]">Subtotal</span>
             <span className="font-mono text-xl font-bold tabular-nums text-[var(--foreground)]">
               {formatMoney(subtotal)}
             </span>
           </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm font-medium text-[var(--foreground-muted)]">
+              Discount ({discountPercent.toFixed(2)}%)
+            </span>
+            <span className="font-mono text-sm font-semibold tabular-nums text-[var(--foreground)]">
+              - {formatMoney(discountAmount)}
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm font-medium text-[var(--foreground-muted)]">Total</span>
+            <span className="font-mono text-xl font-bold tabular-nums text-[var(--foreground)]">
+              {formatMoney(discountedSubtotal)}
+            </span>
+          </div>
+          <div className="space-y-2 rounded-[var(--radius-lg)] border border-[rgba(15,68,21,0.1)] bg-white p-2.5">
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
+              Cash received
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={cashInput}
+                onChange={(e) => setCashInput(e.target.value)}
+                placeholder="0.00"
+                className="input-field !h-9 !py-0 !text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setCashInput(discountedSubtotal.toFixed(2))}
+                className="h-9 rounded-md border border-[rgba(15,68,21,0.15)] bg-white px-2.5 text-xs font-semibold text-[var(--foreground)] transition hover:bg-[rgba(15,68,21,0.05)]"
+              >
+                Exact
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[100, 200, 500, 1000].map((amt) => (
+                <button
+                  key={amt}
+                  type="button"
+                  onClick={() => setCashInput(String(amt))}
+                  className="h-8 rounded-md border border-[rgba(15,68,21,0.15)] bg-white px-2 text-xs font-semibold text-[var(--foreground)] transition hover:bg-[rgba(15,68,21,0.05)]"
+                >
+                  {formatMoney(amt)}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-baseline justify-between text-sm">
+              <span className="text-[var(--foreground-muted)]">Change</span>
+              <span
+                className={`font-mono font-semibold tabular-nums ${
+                  changeDue < 0 ? "text-red-700" : "text-[var(--foreground)]"
+                }`}
+              >
+                {formatMoney(changeDue)}
+              </span>
+            </div>
+          </div>
           <button
             type="button"
             onClick={checkout}
-            disabled={pending || lines.length === 0}
+            disabled={pending || !canCharge}
             className="flex w-full min-h-[50px] items-center justify-center rounded-lg bg-[var(--color-primary-bright)] text-sm font-semibold tracking-wide text-[var(--color-cream-deep)] transition hover:brightness-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
           >
             {pending ? "Processing…" : "Charge customer"}
           </button>
+          {lastReceipt ? (
+            <button
+              type="button"
+              onClick={() => printReceipt(lastReceipt)}
+              className="inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-lg border border-[rgba(15,68,21,0.16)] bg-white text-sm font-semibold text-[var(--foreground)] transition hover:bg-[rgba(15,68,21,0.05)]"
+            >
+              <Printer className="h-4 w-4" />
+              Print last receipt
+            </button>
+          ) : null}
         </div>
       </aside>
     </div>

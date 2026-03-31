@@ -14,6 +14,7 @@ export async function checkoutAction(lines: CheckoutLine[]) {
   const supabase = await createClient();
   const d = new Date();
   const receipt = `PHB-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${Date.now().toString(36).toUpperCase()}`;
+  const createdAtIso = d.toISOString();
 
   const { data, error } = await supabase.rpc("fn_checkout", {
     p_receipt: receipt,
@@ -24,5 +25,5 @@ export async function checkoutAction(lines: CheckoutLine[]) {
   revalidatePath("/pos");
   revalidatePath("/sales");
   revalidatePath("/inventory");
-  return { ok: true as const, saleId: data as string, receipt };
+  return { ok: true as const, saleId: data as string, receipt, createdAtIso };
 }

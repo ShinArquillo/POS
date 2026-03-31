@@ -10,12 +10,16 @@ export function hashAccessCode(code: string) {
 }
 
 export async function getLoginGateHash() {
-  const admin = createServiceRoleClient();
-  const { data, error } = await admin
-    .from("app_settings")
-    .select("value")
-    .eq("key", LOGIN_GATE_KEY)
-    .maybeSingle();
-  if (error) return null;
-  return data?.value ?? null;
+  try {
+    const admin = createServiceRoleClient();
+    const { data, error } = await admin
+      .from("app_settings")
+      .select("value")
+      .eq("key", LOGIN_GATE_KEY)
+      .maybeSingle();
+    if (error) return null;
+    return data?.value ?? null;
+  } catch {
+    return null;
+  }
 }

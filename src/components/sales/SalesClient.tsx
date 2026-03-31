@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Clock3, Printer, Receipt, Users } from "lucide-react";
+import { BarChart3, Clock3, Eye, Printer, Receipt, Users } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -26,6 +26,15 @@ function getSaleTotal(sale: SaleRow) {
   return (sale.sale_items ?? []).reduce((acc, item) => acc + Number(item.price) * item.quantity, 0);
 }
 
+function escapeHtml(text: string) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 export function SalesClient({
   sales,
   generatedAtText,
@@ -41,6 +50,7 @@ export function SalesClient({
   const [toDate, setToDate] = useState("");
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
+  const [receiptModalSale, setReceiptModalSale] = useState<SaleRow | null>(null);
 
   const salesInRange = useMemo(() => {
     if (range === "all") return sales;
@@ -190,6 +200,85 @@ export function SalesClient({
     setToDate("");
     setMinAmount("");
     setMaxAmount("");
+  }
+
+  function printSaleReceipt(sale: SaleRow) {
+    const win = window.open("", "_blank", "width=420,height=760");
+    if (!win) return;
+    const timeText = new Date(sale.created_at).toLocaleString();
+    const rows = (sale.sale_items ?? [])
+      .map((item) => {
+        const lineTotal = Number(item.price) * item.quantity;
+        return `
+          <tr>
+            <td>${escapeHtml(item.products?.name ?? "Item")}
+              <div style="color:#6b7280;font-size:11px;">${item.quantity} × ${escapeHtml(formatMoney(Number(item.price)))}</div>
+            </td>
+            <td class="money">${escapeHtml(formatMoney(Number(item.price)))}</td>
+            <td class="money">${escapeHtml(formatMoney(lineTotal))}</td>
+          </tr>
+        `;
+      })
+      .join("");
+    const total = getSaleTotal(sale);
+
+    win.document.open();
+    win.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Receipt ${escapeHtml(sale.receipt_number)}</title>
+          <style>
+            @page { size: 80mm auto; margin: 6mm; }
+            body { margin: 0; color: #111; background: #fff; font-family: "Courier New", Courier, monospace; }
+            .receipt { width: 72mm; margin: 0 auto; padding: 2mm 0; font-size: 12px; line-height: 1.3; }
+            .center { text-align: center; }
+            .store-name { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+            .store-sub { margin: 2px 0 0; font-size: 11px; color: #4b5563; }
+            .separator { border-top: 1px dashed #333; margin: 8px 0; }
+            .meta { font-size: 11px; }
+            .meta-row { display: flex; justify-content: space-between; gap: 8px; margin: 2px 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12px; }
+            th, td { padding: 5px 0; vertical-align: top; }
+            th { text-align: left; font-size: 11px; border-bottom: 1px dashed #333; }
+            .money { text-align: right; white-space: nowrap; }
+            .totals { margin-top: 8px; font-size: 12px; }
+            .totals div { display: flex; justify-content: space-between; margin: 3px 0; }
+            .grand { font-size: 14px; font-weight: 700; border-top: 1px solid #111; border-bottom: 1px solid #111; padding: 6px 0; margin: 6px 0; }
+            .footer { margin-top: 10px; text-align: center; font-size: 11px; color: #4b5563; }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <div class="center">
+              <p class="store-name">PHOEBE DRUGSTORE</p>
+              <p class="store-sub">Official Sales Receipt</p>
+            </div>
+            <div class="separator"></div>
+            <div class="meta">
+              <div class="meta-row"><span>Receipt No:</span><span>${escapeHtml(sale.receipt_number)}</span></div>
+              <div class="meta-row"><span>Date/Time:</span><span>${escapeHtml(timeText)}</span></div>
+            </div>
+            <div class="separator"></div>
+            <table>
+              <thead>
+                <tr><th>Item</th><th class="money">Price</th><th class="money">Amount</th></tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+            <div class="separator"></div>
+            <div class="totals">
+              <div class="grand"><span>Total</span><span>${escapeHtml(formatMoney(total))}</span></div>
+            </div>
+            <div class="separator"></div>
+            <div class="footer">Thank you for your purchase.</div>
+          </div>
+          <script>window.onload = () => { window.print(); };</script>
+        </body>
+      </html>
+    `);
+    win.document.close();
   }
 
   return (
@@ -514,9 +603,29 @@ export function SalesClient({
                       Staff: {s.profiles?.full_name?.trim() || "Unknown staff"}
                     </p>
                   </div>
-                  <p className="font-mono text-xl font-bold tabular-nums text-[var(--foreground)]">
-                    {formatMoney(total)}
-                  </p>
+                  <div className="flex flex-col items-end gap-2">
+                    <p className="font-mono text-xl font-bold tabular-nums text-[var(--foreground)]">
+                      {formatMoney(total)}
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setReceiptModalSale(s)}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[rgba(15,68,21,0.15)] bg-white px-2.5 text-[11px] font-semibold text-[var(--foreground)] transition hover:bg-[rgba(15,68,21,0.05)]"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        View receipt
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => printSaleReceipt(s)}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[rgba(15,68,21,0.15)] bg-white px-2.5 text-[11px] font-semibold text-[var(--foreground)] transition hover:bg-[rgba(15,68,21,0.05)]"
+                      >
+                        <Printer className="h-3.5 w-3.5" />
+                        Print receipt
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <ul className="mt-4 space-y-1.5 border-t border-[rgba(15,68,21,0.08)] pt-4 text-sm text-[var(--foreground-muted)]">
                   {items.map((it, idx) => (
@@ -544,6 +653,81 @@ export function SalesClient({
           ) : null}
         </ul>
       </section>
+
+      {receiptModalSale ? (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(5,16,9,0.88)] p-4 backdrop-blur-[2px] tablet:p-8"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="receipt-modal-title"
+          onClick={() => setReceiptModalSale(null)}
+        >
+          <div className="flex min-h-[100dvh] items-center justify-center">
+            <div
+              className="w-full max-w-md overflow-hidden rounded-2xl border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface-solid)] shadow-[0_24px_64px_rgba(0,0,0,0.25)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="border-b border-[rgba(15,68,21,0.08)] px-5 py-4">
+                <h4 id="receipt-modal-title" className="text-base font-semibold text-[var(--foreground)]">
+                  Receipt preview
+                </h4>
+                <p className="mt-1 text-xs text-[var(--foreground-muted)]">
+                  {receiptModalSale.receipt_number} · {new Date(receiptModalSale.created_at).toLocaleString()}
+                </p>
+              </div>
+
+              <div className="px-5 py-4">
+                <div className="rounded-lg border border-[rgba(15,68,21,0.12)] bg-white p-4 font-mono text-xs text-[var(--foreground)]">
+                  <p className="text-center text-sm font-bold tracking-wide">PHOEBE DRUGSTORE</p>
+                  <p className="mt-0.5 text-center text-[11px] text-[var(--foreground-muted)]">
+                    Official Sales Receipt
+                  </p>
+                  <div className="my-2 border-t border-dashed border-[rgba(15,68,21,0.3)]" />
+                  <p>Receipt No: {receiptModalSale.receipt_number}</p>
+                  <p>Date/Time: {new Date(receiptModalSale.created_at).toLocaleString()}</p>
+                  <div className="my-2 border-t border-dashed border-[rgba(15,68,21,0.3)]" />
+                  <ul className="space-y-1">
+                    {(receiptModalSale.sale_items ?? []).map((it, idx) => (
+                      <li key={idx} className="space-y-0.5">
+                        <div className="flex justify-between gap-2">
+                          <span className="truncate">{it.products?.name ?? "Item"}</span>
+                          <span className="shrink-0">{formatMoney(Number(it.price) * it.quantity)}</span>
+                        </div>
+                        <p className="text-[11px] text-[var(--foreground-muted)]">
+                          {it.quantity} × {formatMoney(Number(it.price))}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="my-2 border-t border-dashed border-[rgba(15,68,21,0.3)]" />
+                  <div className="flex justify-between text-sm font-bold">
+                    <span>Total</span>
+                    <span>{formatMoney(getSaleTotal(receiptModalSale))}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-[rgba(15,68,21,0.08)] px-5 py-4">
+                <button
+                  type="button"
+                  onClick={() => setReceiptModalSale(null)}
+                  className="h-10 rounded-lg border border-[rgba(15,68,21,0.15)] bg-white px-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[rgba(15,68,21,0.05)]"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => printSaleReceipt(receiptModalSale)}
+                  className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[rgba(15,68,21,0.15)] bg-white px-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[rgba(15,68,21,0.05)]"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print receipt
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

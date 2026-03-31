@@ -5,6 +5,8 @@ import { LoginAccessGate } from "@/components/auth/LoginAccessGate";
 import { getLoginGateHash, LOGIN_GATE_COOKIE } from "@/lib/loginGate";
 import { cookies } from "next/headers";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
   const gateHash = await getLoginGateHash();
   const cookieStore = await cookies();
