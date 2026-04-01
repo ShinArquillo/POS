@@ -489,7 +489,7 @@ export function PosClient({ products }: { products: Product[] }) {
         </div>
       </section>
 
-      <aside className="flex min-h-[420px] min-w-0 flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface)] p-3 landscape-tablet:sticky landscape-tablet:top-24 landscape-tablet:max-h-[calc(100dvh-11rem)] landscape-tablet:p-3.5">
+      <aside className="flex min-h-[420px] min-w-0 flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface)] p-3 landscape-tablet:sticky landscape-tablet:top-24 landscape-tablet:min-h-0 landscape-tablet:max-h-[calc(100dvh-11rem)] landscape-tablet:p-3.5">
         <div className="flex items-center justify-between gap-2 border-b border-[rgba(15,68,21,0.08)] pb-3">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
@@ -519,7 +519,7 @@ export function PosClient({ products }: { products: Product[] }) {
           </p>
         ) : null}
 
-        <ul className="mt-3.5 flex min-h-[140px] flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-1 tablet:min-h-[220px]">
+        <ul className="mt-3.5 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-1">
           {lines.length === 0 ? (
             <li className="flex flex-1 flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[rgba(15,68,21,0.15)] bg-[rgba(15,68,21,0.02)] px-4 py-10 text-center text-sm text-[var(--foreground-muted)]">
               <ShoppingBagIllustration />

@@ -40,7 +40,7 @@ export function BottomNav({ role }: { role: Role }) {
     <>
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] print:hidden tablet:px-6">
         <nav
-          className="pointer-events-auto shadow-dock max-w-2xl rounded-[1.35rem] border border-white/60 bg-[var(--color-surface)] px-2 py-2 backdrop-blur-xl tablet:max-w-3xl tablet:rounded-3xl tablet:px-3 tablet:py-2.5"
+          className="pointer-events-auto shadow-dock max-w-2xl rounded-[1.35rem] border border-white/60 bg-[var(--color-surface)] px-2 py-2 backdrop-blur-sm tablet:max-w-3xl tablet:rounded-3xl tablet:px-3 tablet:py-2.5"
           aria-label="Main"
         >
           <div className="flex items-end justify-center gap-1 tablet:gap-2">
@@ -91,7 +91,7 @@ export function BottomNav({ role }: { role: Role }) {
         )}
         aria-hidden={!moreOpen}
       >
-        <div className="space-y-2 rounded-3xl border border-white/70 bg-[var(--color-surface)] p-3 shadow-[var(--shadow-lg)] backdrop-blur-xl tablet:p-4">
+        <div className="space-y-2 rounded-3xl border border-white/70 bg-[var(--color-surface)] p-3 shadow-[var(--shadow-lg)] backdrop-blur-sm tablet:p-4">
           <NavCard
             href="/account"
             label="My profile"
@@ -130,7 +130,7 @@ export function BottomNav({ role }: { role: Role }) {
       {moreOpen ? (
         <button
           type="button"
-          className="fixed inset-0 z-10 bg-[rgba(10,47,15,0.12)] backdrop-blur-[2px] print:hidden"
+          className="fixed inset-0 z-10 bg-[rgba(10,47,15,0.12)] print:hidden"
           aria-label="Close menu"
           onClick={() => setMoreOpen(false)}
         />

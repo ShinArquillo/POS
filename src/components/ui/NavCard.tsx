@@ -56,7 +56,7 @@ export function NavCard({
 
   if (href) {
     return (
-      <Link href={href} className={cls} scroll={false} onClick={onClick}>
+      <Link href={href} prefetch className={cls} scroll={false} onClick={onClick}>
         {inner}
       </Link>
     );
