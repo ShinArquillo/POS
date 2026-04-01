@@ -206,14 +206,14 @@ export function RestockClient({
 
       {showSupplier ? (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(5,16,9,0.9)] backdrop-blur-[3px]"
+          className="app-modal-backdrop fixed inset-0 z-50 overflow-y-auto"
           role="dialog"
           aria-modal="true"
           onClick={() => setShowSupplier(false)}
         >
-          <div className="flex min-h-[100dvh] items-center justify-center p-4 tablet:p-8">
+          <div className="flex min-h-[100dvh] items-center justify-center p-3 tablet:p-6">
             <div
-              className="my-auto w-full max-w-xl overflow-hidden rounded-2xl border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface-solid)] shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
+              className="app-modal-panel my-auto w-full max-w-xl overflow-hidden rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="border-b border-[rgba(15,68,21,0.08)] px-5 py-4">
@@ -440,7 +440,7 @@ export function RestockClient({
 
       {confirmDeleteOrderId ? (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(5,16,9,0.9)] backdrop-blur-[3px]"
+          className="app-modal-backdrop fixed inset-0 z-50 overflow-y-auto"
           role="dialog"
           aria-modal="true"
           onClick={() => {
@@ -448,9 +448,9 @@ export function RestockClient({
             setDeleteConfirm("");
           }}
         >
-          <div className="flex min-h-[100dvh] items-center justify-center p-5 sm:p-8">
+          <div className="flex min-h-[100dvh] items-center justify-center p-3 tablet:p-6">
             <div
-              className="my-auto w-full max-w-md overflow-hidden rounded-2xl border border-[rgba(220,38,38,0.25)] bg-[var(--color-surface-solid)] shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
+              className="app-modal-panel my-auto w-full max-w-md overflow-hidden rounded-2xl border-red-300/70"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="border-b border-[rgba(15,68,21,0.08)] px-6 py-5">
@@ -597,15 +597,15 @@ export function RestockClient({
 
       {detailsOrder ? (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(5,16,9,0.9)] backdrop-blur-[3px]"
+          className="app-modal-backdrop fixed inset-0 z-50 overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="order-details-title"
           onClick={() => setDetailsOrderId(null)}
         >
-          <div className="flex min-h-[100dvh] items-center justify-center p-4 tablet:p-8">
+          <div className="flex min-h-[100dvh] items-center justify-center p-3 tablet:p-6">
             <div
-              className="my-auto w-full max-w-5xl overflow-hidden rounded-2xl border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface-solid)] shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
+              className="app-modal-panel my-auto w-full max-w-5xl overflow-hidden rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[rgba(15,68,21,0.08)] px-5 py-4">

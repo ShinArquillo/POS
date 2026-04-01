@@ -175,7 +175,7 @@ export function PosClient({ products }: { products: Product[] }) {
   }, [filtered, safeProductPage, productPageSize]);
 
   function printReceipt(receipt: PrintedReceipt) {
-    const win = window.open("", "_blank", "width=420,height=760");
+    const win = window.open("", "_blank", "width=1200,height=760");
     if (!win) {
       setMsg("Pop-up blocked. Allow pop-ups to print receipt.");
       return;
@@ -203,7 +203,7 @@ export function PosClient({ products }: { products: Product[] }) {
           <meta charset="utf-8" />
           <title>Receipt ${escapeHtml(receipt.receiptNumber)}</title>
           <style>
-            @page { size: 80mm auto; margin: 6mm; }
+            @page { size: A4 landscape; margin: 12mm; }
             body {
               margin: 0;
               color: #111;
@@ -213,33 +213,34 @@ export function PosClient({ products }: { products: Product[] }) {
               print-color-adjust: exact;
             }
             .receipt {
-              width: 72mm;
+              width: 100%;
+              max-width: 1120px;
               margin: 0 auto;
-              padding: 2mm 0;
-              font-size: 12px;
+              padding: 0;
+              font-size: 13px;
               line-height: 1.3;
             }
             .center { text-align: center; }
-            .store-name { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
-            .store-sub { margin: 2px 0 0; font-size: 11px; color: #4b5563; }
-            .separator { border-top: 1px dashed #333; margin: 8px 0; }
-            .meta { font-size: 11px; }
-            .meta-row { display: flex; justify-content: space-between; gap: 8px; margin: 2px 0; }
-            table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12px; }
-            th, td { padding: 5px 0; vertical-align: top; }
-            th { text-align: left; font-size: 11px; border-bottom: 1px dashed #333; }
+            .store-name { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.04em; }
+            .store-sub { margin: 3px 0 0; font-size: 13px; color: #4b5563; }
+            .separator { border-top: 1px dashed #333; margin: 10px 0; }
+            .meta { font-size: 13px; }
+            .meta-row { display: flex; justify-content: space-between; gap: 12px; margin: 3px 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px; }
+            th, td { padding: 7px 0; vertical-align: top; }
+            th { text-align: left; font-size: 12px; border-bottom: 1px dashed #333; }
             .money { text-align: right; white-space: nowrap; }
-            .totals { margin-top: 8px; font-size: 12px; }
-            .totals div { display: flex; justify-content: space-between; margin: 3px 0; }
+            .totals { margin-top: 10px; font-size: 13px; }
+            .totals div { display: flex; justify-content: space-between; margin: 4px 0; }
             .grand {
-              font-size: 14px;
+              font-size: 18px;
               font-weight: 700;
               border-top: 1px solid #111;
               border-bottom: 1px solid #111;
-              padding: 6px 0;
-              margin: 6px 0;
+              padding: 8px 0;
+              margin: 8px 0;
             }
-            .footer { margin-top: 10px; text-align: center; font-size: 11px; color: #4b5563; }
+            .footer { margin-top: 12px; text-align: center; font-size: 12px; color: #4b5563; }
           </style>
         </head>
         <body>
@@ -334,7 +335,7 @@ export function PosClient({ products }: { products: Product[] }) {
   }
 
   return (
-    <div className="grid gap-4 tablet:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] tablet:items-start tablet:gap-4.5">
+    <div className="grid gap-4 landscape-tablet:grid-cols-[minmax(0,1fr)_minmax(320px,360px)] landscape-tablet:items-start landscape-tablet:gap-4.5">
       <section className="min-w-0 rounded-[var(--radius-xl)] border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface)] p-3 tablet:p-4">
         <div className="flex items-end justify-between gap-2">
           <div>
@@ -357,7 +358,7 @@ export function PosClient({ products }: { products: Product[] }) {
             placeholder="Search product or category..."
             className="w-full"
           />
-          <div className="flex items-center gap-1.5 justify-self-start tablet:justify-self-end">
+          <div className="flex flex-wrap items-center gap-1.5 justify-self-start tablet:justify-self-end">
             <button
               type="button"
               onClick={() => setSellMode("regular")}
@@ -488,7 +489,7 @@ export function PosClient({ products }: { products: Product[] }) {
         </div>
       </section>
 
-      <aside className="flex min-h-[420px] flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface)] p-3 tablet:sticky tablet:top-24 tablet:max-h-[calc(100dvh-11rem)] tablet:p-3.5">
+      <aside className="flex min-h-[420px] min-w-0 flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface)] p-3 landscape-tablet:sticky landscape-tablet:top-24 landscape-tablet:max-h-[calc(100dvh-11rem)] landscape-tablet:p-3.5">
         <div className="flex items-center justify-between gap-2 border-b border-[rgba(15,68,21,0.08)] pb-3">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
@@ -613,7 +614,7 @@ export function PosClient({ products }: { products: Product[] }) {
                   value={customDiscountInput}
                   onChange={(e) => setCustomDiscountInput(e.target.value)}
                   placeholder="0.00"
-                  className="input-field !h-8 !py-0 !text-xs"
+                  className="input-field min-w-0 flex-1 !h-8 !py-0 !text-xs"
                 />
                 <span className="text-xs text-[var(--foreground-muted)]">%</span>
               </div>
@@ -643,7 +644,7 @@ export function PosClient({ products }: { products: Product[] }) {
             <label className="block text-[11px] font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
               Cash received
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 type="number"
                 min={0}
@@ -651,7 +652,7 @@ export function PosClient({ products }: { products: Product[] }) {
                 value={cashInput}
                 onChange={(e) => setCashInput(e.target.value)}
                 placeholder="0.00"
-                className="input-field !h-9 !py-0 !text-sm"
+                className="input-field min-w-0 flex-1 !h-9 !py-0 !text-sm"
               />
               <button
                 type="button"

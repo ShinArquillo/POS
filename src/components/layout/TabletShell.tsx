@@ -12,7 +12,7 @@ export function TabletShell({
   return (
     <div className="flex min-h-dvh flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] tablet:pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <AppHeader profile={profile} />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 tablet:px-8 tablet:py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 tablet:px-4 tablet:py-6 landscape-tablet:px-8 landscape-tablet:py-8">
         <div className="animate-[fadeIn_0.35s_ease-out]">{children}</div>
       </main>
       <BottomNav role={profile.role} />

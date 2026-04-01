@@ -203,7 +203,7 @@ export function SalesClient({
   }
 
   function printSaleReceipt(sale: SaleRow) {
-    const win = window.open("", "_blank", "width=420,height=760");
+    const win = window.open("", "_blank", "width=1200,height=760");
     if (!win) return;
     const timeText = new Date(sale.created_at).toLocaleString();
     const rows = (sale.sale_items ?? [])
@@ -230,23 +230,30 @@ export function SalesClient({
           <meta charset="utf-8" />
           <title>Receipt ${escapeHtml(sale.receipt_number)}</title>
           <style>
-            @page { size: 80mm auto; margin: 6mm; }
-            body { margin: 0; color: #111; background: #fff; font-family: "Courier New", Courier, monospace; }
-            .receipt { width: 72mm; margin: 0 auto; padding: 2mm 0; font-size: 12px; line-height: 1.3; }
+            @page { size: A4 landscape; margin: 12mm; }
+            body {
+              margin: 0;
+              color: #111;
+              background: #fff;
+              font-family: "Courier New", Courier, monospace;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .receipt { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0; font-size: 13px; line-height: 1.3; }
             .center { text-align: center; }
-            .store-name { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
-            .store-sub { margin: 2px 0 0; font-size: 11px; color: #4b5563; }
-            .separator { border-top: 1px dashed #333; margin: 8px 0; }
-            .meta { font-size: 11px; }
-            .meta-row { display: flex; justify-content: space-between; gap: 8px; margin: 2px 0; }
-            table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12px; }
-            th, td { padding: 5px 0; vertical-align: top; }
-            th { text-align: left; font-size: 11px; border-bottom: 1px dashed #333; }
+            .store-name { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.04em; }
+            .store-sub { margin: 3px 0 0; font-size: 13px; color: #4b5563; }
+            .separator { border-top: 1px dashed #333; margin: 10px 0; }
+            .meta { font-size: 13px; }
+            .meta-row { display: flex; justify-content: space-between; gap: 12px; margin: 3px 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px; }
+            th, td { padding: 7px 0; vertical-align: top; }
+            th { text-align: left; font-size: 12px; border-bottom: 1px dashed #333; }
             .money { text-align: right; white-space: nowrap; }
-            .totals { margin-top: 8px; font-size: 12px; }
-            .totals div { display: flex; justify-content: space-between; margin: 3px 0; }
-            .grand { font-size: 14px; font-weight: 700; border-top: 1px solid #111; border-bottom: 1px solid #111; padding: 6px 0; margin: 6px 0; }
-            .footer { margin-top: 10px; text-align: center; font-size: 11px; color: #4b5563; }
+            .totals { margin-top: 10px; font-size: 13px; }
+            .totals div { display: flex; justify-content: space-between; margin: 4px 0; }
+            .grand { font-size: 18px; font-weight: 700; border-top: 1px solid #111; border-bottom: 1px solid #111; padding: 8px 0; margin: 8px 0; }
+            .footer { margin-top: 12px; text-align: center; font-size: 12px; color: #4b5563; }
           </style>
         </head>
         <body>
@@ -656,7 +663,7 @@ export function SalesClient({
 
       {receiptModalSale ? (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(5,16,9,0.88)] p-4 backdrop-blur-[2px] tablet:p-8"
+          className="app-modal-backdrop fixed inset-0 z-50 overflow-y-auto p-3 tablet:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="receipt-modal-title"
@@ -664,7 +671,7 @@ export function SalesClient({
         >
           <div className="flex min-h-[100dvh] items-center justify-center">
             <div
-              className="w-full max-w-md overflow-hidden rounded-2xl border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface-solid)] shadow-[0_24px_64px_rgba(0,0,0,0.25)]"
+              className="app-modal-panel w-full max-w-md overflow-hidden rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="border-b border-[rgba(15,68,21,0.08)] px-5 py-4">

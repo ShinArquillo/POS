@@ -125,6 +125,18 @@ body {
   .shadow-dock {
     box-shadow: var(--shadow-dock);
   }
+
+  .app-modal-backdrop {
+    background: rgba(5, 16, 9, 0.72);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  .app-modal-panel {
+    border: 1px solid rgba(15, 68, 21, 0.14);
+    background: #fffef8;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.24);
+  }
 }
 
 @keyframes fadeIn {

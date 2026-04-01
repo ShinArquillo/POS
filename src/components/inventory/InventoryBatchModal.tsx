@@ -72,15 +72,15 @@ export function InventoryBatchModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto overscroll-y-contain bg-[rgba(5,16,9,0.9)] backdrop-blur-[3px]"
+      className="app-modal-backdrop fixed inset-0 z-50 overflow-y-auto overscroll-y-contain"
       role="dialog"
       aria-modal="true"
       aria-labelledby="batch-modal-title"
       onClick={onClose}
     >
-      <div className="flex min-h-[100dvh] items-center justify-center p-5 sm:p-8">
+      <div className="flex min-h-[100dvh] items-center justify-center p-3 tablet:p-6">
         <div
-          className="my-auto flex max-h-[min(88vh,680px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-[rgba(15,68,21,0.1)] bg-[var(--color-surface-solid)] shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
+          className="app-modal-panel my-auto flex max-h-[min(92vh,760px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[rgba(15,68,21,0.08)] px-6 py-5">

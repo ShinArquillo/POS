@@ -9,7 +9,7 @@ const roleLabels: Record<string, string> = {
 
 export function AppHeader({ profile }: { profile: Profile }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-[rgba(15,68,21,0.06)] bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-sm)] backdrop-blur-xl tablet:py-3.5">
+    <header className="z-20 border-b border-[rgba(15,68,21,0.06)] bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-sm)] backdrop-blur-xl tablet:py-3.5">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3 tablet:gap-4">
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] tablet:h-14 tablet:w-14">
