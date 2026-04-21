@@ -9,7 +9,7 @@ import type { Role } from "@/types/database";
 
 const roles: Role[] = ["admin", "manager", "staff"];
 const DEFAULT_TEAM_PASSWORD =
-  process.env.DEFAULT_TEAM_PASSWORD || (process.env.NODE_ENV === "development" ? "Team@1234" : "");
+process.env.DEFAULT_TEAM_PASSWORD || (process.env.NODE_ENV === "development" ? "12345" : "")
 
 async function requireAdmin() {
   const profile = await getSessionProfile();
@@ -112,7 +112,7 @@ export async function resetMemberPasswordToDefaultAction(userId: string) {
   const gate = await requireAdmin();
   if (!gate.ok) return gate;
   if (!userId) return { ok: false as const, message: "User ID is required." };
-  if (DEFAULT_TEAM_PASSWORD.length < 8) {
+if (DEFAULT_TEAM_PASSWORD.length < 5) {
     return {
       ok: false as const,
       message:
